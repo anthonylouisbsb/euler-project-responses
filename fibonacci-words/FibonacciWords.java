@@ -1,63 +1,64 @@
-import static java.lang.Math.toIntExact;
+import static java.lang.String.valueOf;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.math.BigInteger;
 import java.util.Scanner;
 
 public class FibonacciWords {
 
   private static final String EOF_PATTERN = "(\r\n|[\n\r\u2028\u2029\u0085])?";
 
-  private static long firstWordLength = 0L;
-  private static long secondWordLength = 0L;
+  private static final BigInteger ZERO = new BigInteger("0");
+  private static final BigInteger ONE = new BigInteger("1");
+  private static final BigInteger TWO = new BigInteger("2");
 
-  private static String FIRST_STRING_ID = "A";
-  private static String SECOND_STRING_ID = "B";
-
-  private static Map<String, Long> stringToSize = new HashMap<>(2);
-
-  public static void main(String args[]) {
-    final Scanner scanner = new Scanner(System.in);
-
-    final int quantityOfTriplets = scanner.nextInt();
-    scanner.skip(EOF_PATTERN);
-
-    for (int i = 0; i < quantityOfTriplets; i++) {
-      final String firstString = scanner.next();
+  public static void main(String[] args) {
+    try (final Scanner scanner = new Scanner(System.in)) {
+      final int quantityOfTriplets = scanner.nextInt();
       scanner.skip(EOF_PATTERN);
 
-      final String secondString = scanner.next();
-      scanner.skip(EOF_PATTERN);
+      for (int i = 0; i < quantityOfTriplets; i++) {
+        final String firstString = scanner.next();
+        scanner.skip(EOF_PATTERN);
 
-      final long quantityOfDigits = scanner.nextLong();
-      scanner.skip(EOF_PATTERN);
+        final String secondString = scanner.next();
+        scanner.skip(EOF_PATTERN);
 
-      final char nthDigit = getTheLineWithDigits(firstString, secondString, quantityOfDigits);
+        final BigInteger quantityOfDigits = scanner.nextBigInteger();
+        scanner.skip(EOF_PATTERN);
 
-      System.out.println(nthDigit);
+        final char nthDigit = getTheLineWithDigits(firstString, secondString, quantityOfDigits);
+
+        System.out.println(nthDigit);
+      }
     }
   }
 
   private static char getTheLineWithDigits(String firstString, String secondString,
-      long requiredQuantityDigits) {
+      BigInteger requiredQuantityDigits) {
 
-    firstWordLength = firstString.length();
+    BigInteger firstWordLength = new BigInteger(valueOf(firstString.length()));
 
-    if (firstWordLength >= requiredQuantityDigits) {
-      final int positionInsideFirstString = toIntExact(requiredQuantityDigits - 1);
+    if (firstWordLength.compareTo(requiredQuantityDigits) >= 0) {
+      final int positionInsideFirstString = requiredQuantityDigits.intValueExact() - 1;
 
       return firstString.charAt(positionInsideFirstString);
     }
 
-    secondWordLength = secondString.length();
+    BigInteger secondWordLength = new BigInteger(valueOf(secondString.length()));
 
-    if (firstWordLength + secondWordLength >= requiredQuantityDigits) {
-      int posInSecondString = toIntExact(requiredQuantityDigits - (firstWordLength + 1));
+    if (secondWordLength.compareTo(requiredQuantityDigits) >= 0) {
+      final int positionInsideFirstString = requiredQuantityDigits.intValueExact() - 1;
 
-      return firstString.charAt(posInSecondString);
+      return secondString.charAt(positionInsideFirstString);
     }
 
-    final long quantityIterations = doFibUntilReachRequiredQuantityDigits(firstWordLength,
+    if (firstWordLength.add(secondWordLength).compareTo(requiredQuantityDigits) >= 0) {
+      int posInSecondString = requiredQuantityDigits.subtract(firstWordLength).intValueExact() - 1;
+
+      return secondString.charAt(posInSecondString);
+    }
+
+    final BigInteger quantityIterations = doFibUntilReachRequiredQuantityDigits(firstWordLength,
         secondWordLength,
         requiredQuantityDigits);
 
@@ -65,47 +66,51 @@ public class FibonacciWords {
         quantityIterations, requiredQuantityDigits);
   }
 
-  private static long doFibUntilReachRequiredQuantityDigits(long firstWordLength,
-      long secondWordLength,
-      long requiredQuantityDigits) {
-    long actualSize = firstWordLength + secondWordLength;
-    long actualIteration = 2;
+  private static BigInteger doFibUntilReachRequiredQuantityDigits(BigInteger firstWordLength,
+      BigInteger secondWordLength,
+      BigInteger requiredQuantityDigits) {
+    BigInteger actualSize = firstWordLength.add(secondWordLength);
+    BigInteger actualIteration = new BigInteger("2");
 
-    while (actualSize < requiredQuantityDigits) {
-      actualIteration++;
+    while (actualSize.compareTo(requiredQuantityDigits) < 0) {
+      actualIteration = actualIteration.add(ONE);
 
-      long temporaryVariable = actualSize;
-      actualSize += secondWordLength;
+      final BigInteger temporaryVariable = actualSize;
+      actualSize = actualSize.add(secondWordLength);
       secondWordLength = temporaryVariable;
     }
 
     return actualIteration;
   }
 
-  private static char getNthDigit(String firstString, String secondString, long firstWordLength,
-      long secondWordLength, long quantityIterations, long requiredQuantityDigits) {
-    long actualQuantityOFDigits = requiredQuantityDigits;
-    long actualIteration = quantityIterations;
+  private static char getNthDigit(String firstString, String secondString,
+      BigInteger firstWordLength,
+      BigInteger secondWordLength, BigInteger quantityIterations,
+      BigInteger requiredQuantityDigits) {
+    BigInteger actualQuantityOFDigits = requiredQuantityDigits;
+    BigInteger actualIteration = quantityIterations;
 
     while (true) {
-      long minusOneIteration = actualIteration - 2;
-      long minusTwoIteration = actualIteration - 1;
+      BigInteger minusOneIteration = actualIteration.subtract(TWO);
+      BigInteger minusTwoIteration = actualIteration.subtract(ONE);
 
-      final long minusOneLength = doFib(minusOneIteration, firstWordLength, secondWordLength);
+      final BigInteger minusOneLength = doFib(minusOneIteration, firstWordLength, secondWordLength);
 
-      if (minusOneLength >= actualQuantityOFDigits && minusOneIteration < 2) {
+      if (minusOneLength.compareTo(actualQuantityOFDigits) >= 0
+          && minusOneIteration.compareTo(TWO) < 0) {
         return getFromBasicIteration(firstString, secondString, minusOneIteration,
             actualQuantityOFDigits);
-      } else if (minusOneLength >= actualQuantityOFDigits) {
+      } else if (minusOneLength.compareTo(actualQuantityOFDigits) >= 0) {
         actualIteration = minusOneIteration;
         continue;
       }
 
-      actualQuantityOFDigits -= minusOneLength;
+      actualQuantityOFDigits = actualQuantityOFDigits.subtract(minusOneLength);
 
-      final long minusTwoLength = doFib(minusTwoIteration, firstWordLength, secondWordLength);
+      final BigInteger minusTwoLength = doFib(minusTwoIteration, firstWordLength, secondWordLength);
 
-      if (minusTwoLength >= actualQuantityOFDigits && minusTwoIteration < 2) {
+      if (minusTwoLength.compareTo(actualQuantityOFDigits) > 0
+          && minusTwoIteration.compareTo(TWO) < 0) {
         return getFromBasicIteration(firstString, secondString, minusTwoIteration,
             actualQuantityOFDigits);
       }
@@ -115,34 +120,36 @@ public class FibonacciWords {
   }
 
   private static char getFromBasicIteration(String firstString, String secondString,
-      long actualIteration, long requiredQuantityDigits) {
-    final int positionInsideString = toIntExact(requiredQuantityDigits - 1);
+      BigInteger actualIteration, BigInteger requiredQuantityDigits) {
+    final int positionInsideString = requiredQuantityDigits
+        .subtract(ONE)
+        .intValueExact();
 
-    if (actualIteration == 0L) {
+    if (actualIteration.compareTo(ZERO) == 0) {
       return firstString.charAt(positionInsideString);
     }
 
     return secondString.charAt(positionInsideString);
   }
 
-  private static long doFib(long quantityIterations, long firstWordLength,
-      long secondWordLength) {
+  private static BigInteger doFib(BigInteger quantityIterations, BigInteger firstWordLength,
+      BigInteger secondWordLength) {
 
-    if (quantityIterations == 0) {
+    if (quantityIterations.compareTo(ZERO) == 0) {
       return firstWordLength;
-    } else if (quantityIterations == 1) {
+    } else if (quantityIterations.compareTo(ONE) == 0) {
       return secondWordLength;
     }
 
-    long actualIteration = 1;
-    long response = secondWordLength;
+    BigInteger actualIteration = ONE;
+    BigInteger response = secondWordLength;
 
-    while (actualIteration < quantityIterations) {
-      long temporaryVariable = response;
-      response += firstWordLength;
+    while (actualIteration.compareTo(quantityIterations) < 0) {
+      final BigInteger temporaryVariable = response;
+      response = response.add(firstWordLength);
       firstWordLength = temporaryVariable;
 
-      actualIteration++;
+      actualIteration = actualIteration.add(ONE);
     }
 
     return response;
