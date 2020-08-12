@@ -1,10 +1,22 @@
 import static java.lang.Math.toIntExact;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class FibonacciWords {
 
   private static final String EOF_PATTERN = "(\r\n|[\n\r\u2028\u2029\u0085])?";
+
+  private static long firstWordLength = 0L;
+  private static long secondWordLength = 0L;
+
+  private static String FIRST_STRING_ID = "A";
+  private static String SECOND_STRING_ID = "B";
+
+  private static Map<String, Long> stringToSize = new HashMap<>(2);
+
+  private static Map<String, String> stringIdToPlain = new HashMap<>(2);
 
   public static void main(String args[]) {
     final Scanner scanner = new Scanner(System.in);
@@ -22,6 +34,9 @@ public class FibonacciWords {
       final long quantityOfDigits = scanner.nextLong();
       scanner.skip(EOF_PATTERN);
 
+      stringIdToPlain.put(FIRST_STRING_ID, firstString);
+      stringIdToPlain.put(SECOND_STRING_ID, secondString);
+
       final char nthDigit = getTheLineWithDigits(firstString, secondString,
           quantityOfDigits);
 
@@ -32,41 +47,63 @@ public class FibonacciWords {
   private static char getTheLineWithDigits(String firstString, String secondString,
       long requiredQuantityDigits) {
 
-    final int quantityOfDigitsFirst = firstString.length();
+    firstWordLength = firstString.length();
 
-    if (quantityOfDigitsFirst >= requiredQuantityDigits) {
-      final int positionInsideSecondString = toIntExact(requiredQuantityDigits - 1);
+    if (firstWordLength >= requiredQuantityDigits) {
+      final int positionInsideFirstString = toIntExact(requiredQuantityDigits - 1);
 
-      return firstString.charAt(positionInsideSecondString);
+      return firstString.charAt(positionInsideFirstString);
     }
 
-    final int quantityOfDigitsSecond = secondString.length();
+    secondWordLength = secondString.length();
 
-    if (quantityOfDigitsFirst + quantityOfDigitsSecond >= requiredQuantityDigits) {
-      int posInSecondString = toIntExact(requiredQuantityDigits - (firstString.length() + 1));
+    if (firstWordLength + secondWordLength >= requiredQuantityDigits) {
+      int posInSecondString = toIntExact(requiredQuantityDigits - (firstWordLength + 1));
 
       return firstString.charAt(posInSecondString);
     }
 
-    return doFibUntilReachRequiredQuantity(firstString, secondString, 3,
-        requiredQuantityDigits);
+    stringToSize.put(FIRST_STRING_ID, firstWordLength);
+    stringToSize.put(SECOND_STRING_ID, secondWordLength);
+
+    return doFibUntilReachRequiredQuantity(FIRST_STRING_ID, SECOND_STRING_ID, firstWordLength,
+        secondWordLength, requiredQuantityDigits);
   }
 
-  private static char doFibUntilReachRequiredQuantity(String firstString,
-      String secondString, int actualLine, long requiredQuantityDigits) {
+  private static char doFibUntilReachRequiredQuantity(String firstStringId, String secondStringId,
+      long firstWordLength, long secondWordLength, long requiredQuantityDigits) {
 
-    final int firstStrLength = firstString.length();
-    final int secondStrLength = secondString.length();
+    final String actualString = firstStringId + secondStringId;
+    final long actualLength = firstWordLength + secondWordLength;
 
-    if (firstStrLength + secondStrLength >= requiredQuantityDigits) {
-      final int posInsideString = toIntExact(requiredQuantityDigits - (firstStrLength + 1));
-
-      return secondString.charAt(posInsideString);
+    if (actualLength >= requiredQuantityDigits) {
+      return getCharFromConcatenatedDigit(actualString, actualLength, requiredQuantityDigits);
     }
 
-    final String concatenatedString = firstString + secondString;
-
-    return doFibUntilReachRequiredQuantity(secondString, concatenatedString,
-        ++actualLine, requiredQuantityDigits);
+    return doFibUntilReachRequiredQuantity(secondStringId, actualString, secondWordLength,
+        actualLength, requiredQuantityDigits);
   }
+
+  private static char getCharFromConcatenatedDigit(String actualString, final long actualLength,
+      final long requiredQuantityOfDigits) {
+    long actualSize = 0L;
+
+    for (int i = 0; i < actualLength; i++) {
+      final String charAtPoint = String.valueOf(actualString.charAt(i));
+      final long stringSize = stringToSize.get(charAtPoint);
+
+      if (actualSize + stringSize >= requiredQuantityOfDigits) {
+        final int sizeToSeekInString = toIntExact(requiredQuantityOfDigits - (actualSize + 1));
+
+        final String plainString = stringIdToPlain.get(charAtPoint);
+
+        return plainString.charAt(sizeToSeekInString);
+      }
+
+      actualSize += stringSize;
+    }
+
+    throw new RuntimeException("Error while trying to retrieve char from concatened string");
+  }
+
 }
